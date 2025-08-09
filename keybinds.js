@@ -31,3 +31,77 @@ export class Keybinds {
      * @param callback the callback to be triggered when the key is pressed.
      * @returns this keybind instance, for fluent-API-style chaining.
      */
+
+    registerKeybind(forMode, keyName, description, callback) {
+        this.keybinds[forMode][keyName] = {
+            description: description,
+            callback: callback
+        };
+        return this;
+    }
+    /**
+     * Trigger a predefined action on keydown, if there is one. This method should
+     * be pretty much directly bound to document.addEventListener, with slight
+     * modification to pass in the current mode as well.
+     *
+     * @param mode the mode that the screenreader is currently in
+     * @param event the KeyboardEvent received from the event listener
+     */
+    triggerEvent(mode, event) {
+        if (this.keybinds[mode][event.key]) {
+            event.preventDefault();
+            this.keybinds[mode][event.key].callback();
+        }
+    }
+    /**
+     * Converts a key name into a string that SpeechSynthesis will more properly
+     * enunciate. For example, key names like "a" are interpreted by default by
+     * the synthesizer to be the article "a", whereas we want it to say the
+     * literal letter "A"; this function will convert that key name to "A.",
+     * which works better when read out.
+     *
+     * @param keyName The string name of the key event to enunciate
+     * @returns a properly-enunciated string if there is one; if not, just the
+     * key name itself
+     */
+    static enunciateKey(keyName) {
+        return {
+            "a": "A.",
+            "ArrowRight": "the right arrow",
+            "ArrowLeft": "the left arrow",
+            "ArrowUp": "the up arrow",
+            "ArrowDown": "the down arrow",
+            " ": "space",
+            "F1": "F 1"
+        }[keyName] || keyName;
+    }
+    /**
+     * Returns a string that reads out all of the keybinds and their descriptions
+     * to the user based on the given mode.
+     *
+     * It is probably a good idea to bind this to a universal help key, e.g. F1,
+     * that the user can press in any mode to get guidance on what their available
+     * controls are.
+     *
+     * @param mode the current mode of the screen reader, e.g. NORMAL, TABLE, etc.
+     */
+    getHelpString(mode) {
+        let helpString = "";
+        for (const [keyName, info] of Object.entries(this.keybinds[mode])) {
+            helpString += " Press " + Keybinds.enunciateKey(keyName)
+                + " to " + info.description + ". ";
+        }
+        return helpString;
+    }
+    /**
+     * Get all of the defined keybinds in the current screen reader mode.
+     * This is used to generate the set of on-screen controls dynamically based
+     * on defined keybinds and current mode.
+     *
+     * @param mode the mode for which to get keybinds
+     * @returns the raw map from key names to description + callback
+     */
+    getAllKeybinds(mode) {
+        return this.keybinds[mode];
+    }
+}
